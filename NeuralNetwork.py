@@ -62,7 +62,7 @@ class NeuralNetwork:
             self.weights[i] -= self.learning_rate * np.dot(deltas[i], activations[i].T)
             self.biases[i] -= self.learning_rate * deltas[i]
 
-    def train(self, X, Y, epochs=10000):
+    def train(self, X, Y, epochs=100):
         for epoch in range(epochs):
             for x, y in zip(X, Y):
                 x = x.reshape(-1, 1)
