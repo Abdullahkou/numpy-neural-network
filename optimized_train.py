@@ -1,4 +1,4 @@
-from NeuralNetwork import NeuralNetwork
+from optimized_NeuralNetwork import NeuralNetwork
 import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
@@ -19,7 +19,7 @@ print("Traindata: ", len(X_train))
 print("Validdata: ", len(X_test))
 
 nn = NeuralNetwork([64, 32, 10], learning_rate=0.001, activations=["relu", "softmax"])
-nn.train(X_train, Y_train, epochs=200)
+nn.train(X_train, Y_train, epochs=200, batch_size=8)
 
 
 for x, y in zip(X_test[:5], Y_test[:5]):

@@ -1,24 +1,30 @@
 import numpy as np
 
+"""
+Optimized Neural Network Implementation in NumPy
+===================================================
+
+This script implements a fully connected neural network with various activation functions.
+Optimizations have been made for improved training efficiency, including:
+- Mini-Batch Training
+- Vectorized Forward and Backpropagation
+- Optimized Weight Initialization (He Initialization)
+- Use of np.float32 for Memory Optimization
+- L2 loss
+
+Author: Abdullah
+"""
+
 class NeuralNetwork:
-    def __init__(self, layer_sizes: list[int], activations: list[str], learning_rate: float = 0.1):
-        """
-            A fully connected neural network implemented in NumPy.
-            
-            Parameters:
-            - layer_sizes: list of integers specifying the number of neurons per layer.
-            - learning_rate: float, determines the step size during gradient descent.
-            - activations: list of strings specifying the activation functions per layer.
-            - Loss: L2 loss
-            
-            Available activations: 'sigmoid', 'relu', 'tanh', 'identity', 'softmax'
-        """
+    def __init__(self, layer_sizes, activations, learning_rate=0.1):
         self.layer_sizes = layer_sizes
         self.learning_rate = learning_rate
         self.activations = [self.get_activation(act) for act in activations]
         self.activation_derivatives = [self.get_activation_derivative(act) for act in activations]
-        self.weights = [np.random.randn(n_out, n_in) * 0.1 for n_in, n_out in zip(layer_sizes[:-1], layer_sizes[1:])]
-        self.biases = [np.random.randn(n, 1) * 0.1 for n in layer_sizes[1:]]
+
+        self.weights = [np.random.randn(n_out, n_in).astype(np.float32) * np.sqrt(2.0 / n_in) 
+                        for n_in, n_out in zip(layer_sizes[:-1], layer_sizes[1:])]
+        self.biases = [np.zeros((n, 1), dtype=np.float32) for n in layer_sizes[1:]]
 
     def get_activation(self, name):
         return {
@@ -48,13 +54,13 @@ class NeuralNetwork:
         return np.maximum(0, x)
 
     def relu_derivative(self, x):
-        return (x > 0).astype(float)
+        return (x > 0).astype(np.float32)
 
     def tanh(self, x):
         return np.tanh(x)
 
     def tanh_derivative(self, x):
-        return 1 - np.tanh(x) ** 2
+        return 1 - np.square(np.tanh(x))
 
     def identity(self, x):
         return x
@@ -83,19 +89,27 @@ class NeuralNetwork:
             deltas.insert(0, np.dot(self.weights[i].T, deltas[0]) * self.activation_derivatives[i - 1](activations[i]))
         for i in range(len(self.weights)):
             self.weights[i] -= self.learning_rate * np.dot(deltas[i], activations[i].T)
-            self.biases[i] -= self.learning_rate * deltas[i]
+            self.biases[i] -= self.learning_rate * np.mean(deltas[i], axis=1, keepdims=True)
 
-    def train(self, X, Y, epochs=100):
+    def train(self, X, Y, epochs=100, batch_size=8):
+        X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.float32)
+        num_samples = X.shape[0]
+
         for epoch in range(epochs):
-            for x, y in zip(X, Y):
-                x = x.reshape(-1, 1)
-                y = y.reshape(-1, 1)
-                activations = self.forward(x)
-                self.backward(activations, y)
+            indices = np.random.permutation(num_samples)
+            X_shuffled, Y_shuffled = X[indices], Y[indices]
+
+            for i in range(0, num_samples, batch_size):
+                X_batch = X_shuffled[i:i + batch_size].T
+                Y_batch = Y_shuffled[i:i + batch_size].T
+
+                activations = self.forward(X_batch)
+                self.backward(activations, Y_batch)
+
             if epoch % 1 == 0:
-                loss = np.mean((activations[-1] - y) ** 2)
+                loss = np.mean((activations[-1] - Y_batch) ** 2)
                 print(f"Epoch {epoch}: Loss = {loss:.4f}")
 
     def predict(self, x):
-        x = x.reshape(-1, 1)
+        x = np.array(x, dtype=np.float32).reshape(-1, 1)
         return self.forward(x)[-1]
