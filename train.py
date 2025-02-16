@@ -11,14 +11,15 @@ Y = digits.target.reshape(-1, 1)
 
 
 encoder = OneHotEncoder(sparse=False) # One-Hot-Encoding
+Y = encoder.fit_transform(Y)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
 print("Traindata: ", len(X_train))
 print("Validdata: ", len(X_test))
 
-nn = NeuralNetwork([64, 32, 10], learning_rate=0.1)
-nn.train(X_train, Y_train, epochs=5000)
+nn = NeuralNetwork([64, 32, 10], learning_rate=0.1, activations=["relu", "sigmoid"])
+nn.train(X_train, Y_train, epochs=20)
 
 
 for x, y in zip(X_test[:5], Y_test[:5]):
